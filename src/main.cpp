@@ -63,8 +63,8 @@ int main() {
         auto painter = gfx::OpenGL::Painter(winSize);
 
         // Load the fonts
-        painter.fc->loadFont("../vendor/res/Roboto-Regular.ttf");
-        
+        painter.fc->loadFont("../vendor/res/Roboto-Medium.ttf");
+
         int frameCount = 0;
         auto lastTime = std::chrono::high_resolution_clock::now();
 
