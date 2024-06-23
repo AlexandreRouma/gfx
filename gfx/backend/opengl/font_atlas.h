@@ -1,5 +1,5 @@
 #pragma once
-#include "../vendor/glad/glad.h"
+#include "glad/glad.h"
 #include "../../vec2.h"
 #include <functional>
 
