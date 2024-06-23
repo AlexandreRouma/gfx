@@ -63,17 +63,8 @@ int main() {
         auto painter = gfx::OpenGL::Painter(winSize);
 
         // Load the fonts
-        painter.fc->loadFont("../vendor/res/NotoSansJP-Regular.ttf");
-        painter.fc->loadFont("../vendor/res/Roboto-Thin.ttf");
         painter.fc->loadFont("../vendor/res/Roboto-Regular.ttf");
-        painter.fc->loadFont("../vendor/res/Roboto-Medium.ttf");
-        painter.fc->loadFont("../vendor/res/Roboto-Bold.ttf");
-        painter.fc->loadFont("../vendor/res/Roboto-Black.ttf");
-        painter.fc->loadFont("C:/Windows/Fonts/arial.ttf");
-        painter.fc->loadFont("C:/Windows/Fonts/segoeui.ttf");
-        painter.fc->loadFont("C:/Windows/Fonts/consola.ttf");
-        painter.fc->loadFont("C:/Users/ryzerth/Downloads/helvetica-bold.ttf");
-
+        
         int frameCount = 0;
         auto lastTime = std::chrono::high_resolution_clock::now();
 
@@ -139,9 +130,7 @@ int main() {
                 double fps = 1e9 * (double)frames / (double)ns;
                 flog::debug("FPS: {} => Glyphs per Second: {}", 1e9 * (double)frames / (double)ns, fps*242000.0);
             }
-        }
-
-        
+        }        
     }
     catch (const std::exception& e) {
         flog::error(e.what());

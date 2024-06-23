@@ -78,7 +78,7 @@ namespace gfx::OpenGL {
          * @param position Position of the top left corner of the polygon.
          * @param polygon The polygon to draw.
          * @param size Size of the bounding box of the polygon.
-         * @param color Color of the rectangle.
+         * @param color Color of the polygon.
          * @param thickness Thickness of the border in pixels.
         */
         void drawPolygon(const Point& position, const Polygon& polygon, const Size& size, const Color& color, int thickness = 1);
@@ -88,7 +88,7 @@ namespace gfx::OpenGL {
          * @param position Position of the top left corner of the polygon.
          * @param polygon The polygon to draw.
          * @param size Size of the bounding box of the polygon.
-         * @param color Color of the rectangle.
+         * @param color Color of the polygon.
         */
         void fillPolygon(const Point& position, const Polygon& polygon, const Size& size, const Color& color);
         
