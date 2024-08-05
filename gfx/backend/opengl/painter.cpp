@@ -2,10 +2,8 @@
 #include "shader.h"
 #include "shader_source.h"
 #include "glm/gtc/type_ptr.hpp"
-#include <math.h>
 #include "font_cache.h"
-
-#include "flog/flog.h"
+#include <math.h>
 
 #define FL_M_PI 3.141592653589793238462643383279502884197f
 

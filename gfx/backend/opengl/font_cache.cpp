@@ -1,9 +1,8 @@
 #include "font_cache.h"
+#include "flog/flog.h"
 #include <stdexcept>
 #include <fstream>
 #include <format>
-
-#include <flog/flog.h>
 
 namespace gfx::OpenGL {
     FT_Library FontCache::library;
@@ -52,6 +51,10 @@ namespace gfx::OpenGL {
         std::string name = std::format("{} {}", face->family_name, face->style_name);
         if (fontFiles.find(name) != fontFiles.end()) { return; }
         flog::debug("Loaded font: '{}'", name);
+
+        // TODO: The font file data list should be global to all font caches
+        // Actually a lot of objects should be global to avoid reloading in multiple windows
+        // Only the OpenGL objects, and thus atlas should belong to each instance
 
         // Destroy freetype data
         FT_Done_Face(face);

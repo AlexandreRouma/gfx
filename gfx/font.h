@@ -41,6 +41,7 @@ namespace gfx {
         /**
          * For use only by the backend code.
         */
+        // TODO: Get rid of this shit. Doing per drawText call is fine... Terminals will have to be done some other way then tons of drawText calls
         std::any backendTag;
 
     private:

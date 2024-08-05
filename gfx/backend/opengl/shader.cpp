@@ -1,5 +1,5 @@
 #include "shader.h"
-#include "flog.h"
+#include "flog/flog.h"
 #include <stdexcept>
 
 namespace gfx::OpenGL {
