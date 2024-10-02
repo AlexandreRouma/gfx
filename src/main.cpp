@@ -45,7 +45,7 @@ int main() {
 #endif
         bool swapNeeded = true;
 
-        gfx::Size winSize(1920, 1080);
+        gfx::Size winSize(1280, 720);
 
         // Create windows
         GLFWwindow* glfwWindow = glfwCreateWindow(winSize.x, winSize.y, "GFX Demo", NULL, NULL);
@@ -64,11 +64,12 @@ int main() {
 
         // Load the fonts
         painter.fc->loadFont("../vendor/res/Roboto-Medium.ttf");
+        painter.fc->loadFont("../vendor/res/Roboto-Regular.ttf");
 
         int frameCount = 0;
         auto lastTime = std::chrono::high_resolution_clock::now();
 
-        gfx::Font font("Roboto Medium", 14);
+        gfx::Font font("Roboto Regular", 14);
         gfx::Color color(21.0/255.0, 132.0/255.0, 224.0/255.0, 1);
 
         // Create a checkmark
@@ -82,6 +83,8 @@ int main() {
         };
         gfx::Polygon checkmark(checkmarkVerts);
 
+        double counter = -M_PI * 0.5;
+
         while (true) {
             glfwPollEvents();
             // Check if the window should exit
@@ -94,25 +97,34 @@ int main() {
 
             // Clear frame
             glDisable(GL_SCISSOR_TEST);
-            // glClearColor(0.15f, 0.15f, 0.15f, 1.0f);
             glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT);
 
-            // Draw things
+            // Begin the render
             painter.beginRender();
-            // for (int i = 0; i < 1000; i++) {
-            //     painter.drawText(gfx::Point(10, 15+i*19), "According to all known laws of aviation, there is no way a bee should be able to fly. Its wings are too small to get its fat little body off the ground. The bee of course, flies anyway, because bees don't care what humans think is impossible.", font, color);
-            // }
-
-            //font = gfx::Font("Roboto Medium", 16 + (frameCount%64)/4);
-            //painter.drawText(gfx::Point(10, 60), "Hello!", font, color);
 
             // Draw a checkmark
             painter.fillRect(gfx::Rect(gfx::Point(98, 98), gfx::Point(118, 118)), gfx::Color(0.15, 0.15, 0.15, 1.0));
             painter.fillPolygon(gfx::Point(100, 100), checkmark, gfx::Size(17, 17), color);
-            painter.drawText(gfx::Point(123, 114), "Checkbox!", font, gfx::Color(1.0, 1.0, 1.0, 1.0));
+            painter.drawText(gfx::Point(123, 114), "The quick brown fox jumps over the lazy dog.", font, gfx::Color(1.0, 1.0, 1.0, 1.0));
 
+            painter.drawArc(gfx::Point(500, 500), 128, -30.0*(M_PI/180.0), 210.0*(M_PI/180.0), gfx::Color(0.15, 0.15, 0.15, 1.0), 20);
+            float input = (sin(counter) + 1.0)*0.5;
+            painter.drawArc(gfx::Point(500, 500), 128, -30.0*(M_PI/180.0), (input*240.0 - 30)*(M_PI/180.0), color, 20);
+            char str[128];
+            sprintf(str, "%0.1f%%", input*100.0f);
+            painter.drawText(gfx::Point(500, 500), str, font, gfx::Color(1.0, 1.0, 1.0, 1.0), gfx::H_REF_CENTER, gfx::V_REF_CENTER);
+
+            painter.fillRect(gfx::Rect(gfx::Point(200, 200), gfx::Point(420, 207)), gfx::Color(0.15, 0.15, 0.15, 1.0), 3);
+
+            counter += 0.02;
+            while (counter > M_PI) { counter -= 2.0*M_PI; }
+            while (counter < -M_PI) { counter += 2.0*M_PI; }
+
+            // TODO: Workaround for buggy behavior
             painter.fc->atlas.pushTexture();
+
+            // Finish the render
             painter.endRender();
 
             // Flush commands and swap buffers
