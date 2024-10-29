@@ -5,6 +5,7 @@
 #include "font_cache.h"
 #include <memory>
 #include <vector>
+#include <stack>
 
 namespace gfx::OpenGL {
 #pragma pack(push, 1)
@@ -46,6 +47,14 @@ namespace gfx::OpenGL {
          * Stop the rendering procedure.
         */
         void endRender();
+
+        void pushStencil(const Rect& stencil);
+
+        void popStencil();
+
+        void pushOffset(const Point& offset);
+
+        void popOffset();
 
         /**
          * Draw a line.
@@ -139,13 +148,15 @@ namespace gfx::OpenGL {
         void addTri(int a, int b, int c);
         void flush();
         void selectTexture(GLuint id);
+        void updateStencil();
+        void updateOffset();
         // TODO: Function to load the texture
 
         Size canvasSize;
         int VBOCapacity = 0;
         int EBOCapacity = 0;
-
-        
+        std::stack<Rect> stencils;
+        std::stack<Point> offsets;
 
         // GPU-side variables
         std::shared_ptr<Shader> shader;
@@ -161,6 +172,8 @@ namespace gfx::OpenGL {
         glm::mat4 projMat;
         std::vector<VertexAttrib> vertices;
         std::vector<int> indices;
+        Rect stencil;
+        Point offset;
 
         // OpenGL buffers objects
         GLuint VAO;

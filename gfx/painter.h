@@ -6,12 +6,18 @@
 #include <string>
 
 namespace gfx {
+    /**
+     * Horizontal reference.
+    */
     enum HRef {
         H_REF_LEFT,
         H_REF_CENTER,
         H_REF_RIGHT
     };
 
+    /**
+     * Vertical reference.
+    */
     enum VRef {
         V_REF_TOP,
         V_REF_CENTER,
@@ -19,11 +25,20 @@ namespace gfx {
         V_REF_BOTTOM
     };
 
+    // TODO: Switch to floats everywhere? Would be nice for arbitrary drawing but slower for devices without hardware floats due to conversion.
+
     class Painter {
     public:
+        // Virtual destructor
         virtual ~Painter() {}
 
-        // TODO: Switch to floats everywhere? Would be nice for arbitrary drawing but slower for devices without hardware floats due to conversion.
+        virtual void pushStencil(const Rect& stencil) = 0;
+
+        virtual void popStencil() = 0;
+
+        virtual void pushOffset(const Point& offset) = 0;
+
+        virtual void popOffset() = 0;
 
         /**
          * Draw a line.

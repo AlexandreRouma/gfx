@@ -4,6 +4,7 @@
 #include "glm/gtc/type_ptr.hpp"
 #include "font_cache.h"
 #include <math.h>
+#include <stdexcept>
 
 #define FL_M_PI 3.141592653589793238462643383279502884197f
 
@@ -66,9 +67,19 @@ namespace gfx::OpenGL {
 
         // Regenerate the projection matrix
         genProjMatrix();
+
+        // Update the stencil
+        stencil = Rect(Point(0, 0), Point(canvasSize.x - 1, canvasSize.y - 1));
+        updateStencil();
     }
 
     void Painter::beginRender() {
+        // Reset the stencil and offset
+        if (!stencils.empty()) { stencils = std::stack<Rect>(); }
+        if (!offsets.empty()) { offsets = std::stack<Point>(); }
+        stencil = Rect(Point(0, 0), Point(canvasSize.x - 1, canvasSize.y - 1));
+        offset = Point(0, 0);
+
         // Setup OpenGL options
         glDisable(GL_DEPTH_TEST);
         glEnable(GL_BLEND);
@@ -80,9 +91,12 @@ namespace gfx::OpenGL {
 
         // Load shader and set uniform variables
         shader->use();
-        glUniform2f(posUnif, 0.0f, 0.0f);
         glUniformMatrix4fv(projMatUnif, 1, GL_FALSE, glm::value_ptr(projMat));
         glUniform1i(samplerUnif, 0);
+
+        // Set the stencil and offset
+        updateStencil();
+        updateOffset();
 
         // Configure textures to allow non-multiple of 4 widths
         // TODO: GET RID IF THIS WHEN FULL COLOR IS USED FOR FONTS
@@ -96,6 +110,64 @@ namespace gfx::OpenGL {
     void Painter::endRender() {
         // Flush remaining geometry
         flush();
+    }
+
+    void Painter::pushStencil(const Rect& stencil) {
+        // Flush any remaining draw commands
+        flush();
+
+        // Push the current stencil
+        stencils.push(this->stencil);
+
+        // Compute the new stencil
+        Rect absStencil(stencil.getA() + offset, stencil.getB() + offset);
+        Rect newStencil = this->stencil & absStencil;
+
+        // Update the stencil
+        this->stencil = newStencil;
+        updateStencil();
+    }
+
+    void Painter::popStencil() {
+        // Flush any remaining draw commands
+        flush();
+
+        // If no stencil was previous pushed, give up
+        if (stencils.empty()) { throw std::runtime_error("Cannot pop stencil, no stencil was pushed"); }
+
+        // Pop the stencil
+        stencil = stencils.top();
+        stencils.pop();
+
+        // Update the stencil GPU-size
+        updateStencil();
+    }
+
+    void Painter::pushOffset(const Point& offset) {
+        // Flush any remaining draw commands
+        flush();
+
+        // Push the current offset
+        offsets.push(this->offset);
+
+        // Update the offset
+        this->offset = this->offset + offset;
+        updateOffset();
+    }
+
+    void Painter::popOffset() {
+        // Flush any remaining draw commands
+        flush();
+
+        // If no stencil was previous pushed, give up
+        if (offsets.empty()) { throw std::runtime_error("Cannot pop offset, no offset was pushed"); }
+
+        // Pop the stencil
+        offset = offsets.top();
+        offsets.pop();
+
+        // Update the offset GPU-size
+        updateOffset();
     }
 
     void Painter::drawLine(const Point& a, const Point& b, const Color& color, int thickness) {
@@ -308,16 +380,73 @@ namespace gfx::OpenGL {
     }
 
     Size Painter::measureText(Font& font, const char* str) {
-        // TODO
-        return Size();
+        // Begin the cursor at 0
+        double cursor = 0.0;
+
+        // Prepare the font
+        fc->prepareFont(font);
+
+        // Iterate over all characters
+        while (true) {
+            // Get unicode ID
+            int id = getCodepoint(str);
+            if (!id) { break; }
+
+            // Compute the sub-pixel alignment
+            int x = floorf(cursor);
+            int subx = floorf((cursor - x) * 4.0f);
+
+            // Fetch glyph info
+            GlyphInfo info = fc->getGlyph(font, id, subx);
+
+            // Update cursor
+            cursor += info.xAdvance;
+        }
+
+        return Size(ceil(cursor), font.getSize());
     }
 
     void Painter::drawText(const Point& position, const char* str, Font& font, const Color& color, HRef href, VRef vref) {
-        // Prepare the font
-        fc->prepareFont(font);
-        
         // Initialize cursor
         Vec2f cursor(position.x, position.y);
+
+        // Do horizontal alignment
+        if (href == H_REF_LEFT) {
+            // Prepare the font since measureText (which would prepare it) isn't called
+            fc->prepareFont(font);
+        }
+        else {
+            // Get the horizontal measurements of the text
+            Size tsize = measureText(font, str);
+
+            // Move cursor depending on the desired alignement
+            if (href == H_REF_CENTER) {
+                cursor.x -= tsize.x / 2;
+            }
+            else if (href == H_REF_RIGHT) {
+                cursor.x -= tsize.x;
+            }
+        }
+
+        // Do vertical alignement
+        if (vref != V_REF_BASELINE) {
+            // Get the font metrics
+            FontMetrics metrics = fc->getFontMetrics(font);
+
+            // Move the cursor depending on the desired alignement
+            if (vref == V_REF_BOTTOM) {
+                cursor.y += metrics.descender;
+            }
+            else if (vref == V_REF_CENTER) {
+                cursor.y += (metrics.descender + metrics.ascender) * 0.5f;
+            }
+            else if (vref == V_REF_TOP) {
+                cursor.y += metrics.ascender;
+            }
+
+            // Quantize the position (TODO: Change this if fractional y position support is added)
+            cursor.y = round(cursor.y);
+        }
         
         // Iterate over all characters
         while (true) {
@@ -419,6 +548,14 @@ namespace gfx::OpenGL {
         // Flush buffers
         vertices.clear();
         indices.clear();
+    }
+
+    void Painter::updateStencil() {
+        glScissor(stencil.getA().x, canvasSize.y - stencil.getB().y - 1, stencil.getSize().x, stencil.getSize().y);
+    }
+
+    void Painter::updateOffset() {
+        glUniform2f(posUnif, offset.x, offset.y);
     }
 
     void Painter::selectTexture(GLuint id) {

@@ -103,21 +103,38 @@ int main() {
             // Begin the render
             painter.beginRender();
 
-            // Draw a checkmark
-            painter.fillRect(gfx::Rect(gfx::Point(98, 98), gfx::Point(118, 118)), gfx::Color(0.15, 0.15, 0.15, 1.0));
-            painter.fillPolygon(gfx::Point(100, 100), checkmark, gfx::Size(17, 17), color);
-            painter.drawText(gfx::Point(123, 114), "The quick brown fox jumps over the lazy dog.", font, gfx::Color(1.0, 1.0, 1.0, 1.0));
-
-            painter.drawArc(gfx::Point(500, 500), 128, -30.0*(M_PI/180.0), 210.0*(M_PI/180.0), gfx::Color(0.15, 0.15, 0.15, 1.0), 20);
             float input = (sin(counter) + 1.0)*0.5;
+
+            // // Draw a checkmark
+            // painter.fillRect(gfx::Rect(gfx::Point(98, 98), gfx::Point(118, 118)), gfx::Color(0.15, 0.15, 0.15, 1.0));
+            // if ((input > 0.25f && input < 0.5f) || (input > 0.75f && input < 1.0f)) {
+            //     painter.fillPolygon(gfx::Point(100, 100), checkmark, gfx::Size(17, 17), color);
+            // }
+            // painter.drawText(gfx::Point(123, 114), "The quick brown fox jumps over the lazy dog.", font, gfx::Color(1.0, 1.0, 1.0, 1.0));
+
+            // painter.pushStencil(gfx::Rect(gfx::Point(500, 500), gfx::Size(128, 128)));
+            // painter.pushOffset(gfx::Point(0, 0));
+            painter.drawArc(gfx::Point(500, 500), 128, -30.0*(M_PI/180.0), 210.0*(M_PI/180.0), gfx::Color(0.15, 0.15, 0.15, 1.0), 20);
             painter.drawArc(gfx::Point(500, 500), 128, -30.0*(M_PI/180.0), (input*240.0 - 30)*(M_PI/180.0), color, 20);
             char str[128];
             sprintf(str, "%0.1f%%", input*100.0f);
-            painter.drawText(gfx::Point(500, 500), str, font, gfx::Color(1.0, 1.0, 1.0, 1.0), gfx::H_REF_CENTER, gfx::V_REF_CENTER);
-
+            painter.drawText(gfx::Point(500, 500), str, font, gfx::Color(1.0, 1.0, 1.0, 1.0), gfx::H_REF_CENTER, gfx::V_REF_BASELINE);
             painter.fillRect(gfx::Rect(gfx::Point(200, 200), gfx::Point(420, 207)), gfx::Color(0.15, 0.15, 0.15, 1.0), 3);
+            // painter.popOffset();
+            // painter.popStencil();
 
-            counter += 0.02;
+            painter.drawLine(gfx::Point(0, 100), gfx::Point(400, 100), gfx::Color(0.0, 1.0, 0.0, 1.0));
+            painter.drawText(gfx::Point(50, 100), "Ag!", font, gfx::Color(1.0, 1.0, 1.0, 1.0), gfx::H_REF_CENTER, gfx::V_REF_BOTTOM);
+            painter.drawText(gfx::Point(150, 100), "Ag!", font, gfx::Color(1.0, 1.0, 1.0, 1.0), gfx::H_REF_CENTER, gfx::V_REF_BASELINE);
+            painter.drawText(gfx::Point(250, 100), "Ag!", font, gfx::Color(1.0, 1.0, 1.0, 1.0), gfx::H_REF_CENTER, gfx::V_REF_CENTER);
+            painter.drawText(gfx::Point(350, 100), "Ag!", font, gfx::Color(1.0, 1.0, 1.0, 1.0), gfx::H_REF_CENTER, gfx::V_REF_TOP);
+
+            painter.drawText(gfx::Point(50, 140), "Bottom", font, gfx::Color(1.0, 1.0, 1.0, 1.0), gfx::H_REF_CENTER, gfx::V_REF_BASELINE);
+            painter.drawText(gfx::Point(150, 140), "Baseline", font, gfx::Color(1.0, 1.0, 1.0, 1.0), gfx::H_REF_CENTER, gfx::V_REF_BASELINE);
+            painter.drawText(gfx::Point(250, 140), "Center", font, gfx::Color(1.0, 1.0, 1.0, 1.0), gfx::H_REF_CENTER, gfx::V_REF_BASELINE);
+            painter.drawText(gfx::Point(350, 140), "Top", font, gfx::Color(1.0, 1.0, 1.0, 1.0), gfx::H_REF_CENTER, gfx::V_REF_BASELINE);
+
+            counter += 0.01;
             while (counter > M_PI) { counter -= 2.0*M_PI; }
             while (counter < -M_PI) { counter += 2.0*M_PI; }
 
@@ -140,7 +157,7 @@ int main() {
                 frameCount = 0;
                 lastTime = now;
                 double fps = 1e9 * (double)frames / (double)ns;
-                flog::debug("FPS: {} => Glyphs per Second: {}", 1e9 * (double)frames / (double)ns, fps*242000.0);
+                flog::debug("FPS: {}", 1e9 * (double)frames / (double)ns);
             }
         }        
     }
