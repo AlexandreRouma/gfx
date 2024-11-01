@@ -6,15 +6,15 @@ namespace gfx::OpenGL {
     */
     const char* VERTEX_SHADER_SRC =
         "#version 120\n"
-        "uniform mat4 projMatUnif;\n"
-        "uniform vec2 posUnif;\n"
+        "uniform vec2 scaleUnif;\n"
+        "uniform vec2 offsetUnif;\n"
         "attribute vec2 posAttr;\n"
         "attribute vec4 colorAttr;\n"
         "attribute vec2 texCoordAttr;\n"
         "varying vec4 color;\n"
         "varying vec2 texCoord;\n"
         "void main() {\n"
-        "    gl_Position = projMatUnif * vec4((posAttr + posUnif), 1.0, 1.0);\n"
+        "    gl_Position = vec4(posAttr*scaleUnif + offsetUnif, 0.5, 1.0);\n"
         "    color = colorAttr;\n"
         "    texCoord = texCoordAttr;\n"
         "}"

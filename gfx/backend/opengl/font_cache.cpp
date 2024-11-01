@@ -168,14 +168,14 @@ namespace gfx::OpenGL {
 
         // Add to the atlas
         GlyphCords coords;
-        Size glyphSize = Size(font.slot->bitmap.width, font.slot->bitmap.rows);
+        Sizei glyphSize(font.slot->bitmap.width, font.slot->bitmap.rows);
         atlas.addGlyph(glyphSize, font.slot->bitmap.buffer, coords);
 
         // Create cache entry
         float texSize = atlas.getTextureSize();
         GlyphInfo info = {
             glyphSize,
-            Vec2f(font.slot->bitmap_left, font.slot->bitmap_top),
+            Vec2i(font.slot->bitmap_left, font.slot->bitmap_top),
             coords,
             atlas.getTextureID(),
             (float)font.face->glyph->linearHoriAdvance * (1.0f / (float)(1 << 16)),

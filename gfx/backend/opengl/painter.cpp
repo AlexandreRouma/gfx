@@ -1,7 +1,6 @@
 #include "painter.h"
 #include "shader.h"
 #include "shader_source.h"
-#include "glm/gtc/type_ptr.hpp"
 #include "font_cache.h"
 #include <math.h>
 #include <stdexcept>
@@ -11,14 +10,16 @@
 #define NULL_TEXTURE    0
 
 namespace gfx::OpenGL {
-    Painter::Painter(const Size& canvasSize) {
+    Painter::Painter(const Sizei& canvasSize) {
         // Set canvas size which also generates the projection matrix
         setCanvasSize(canvasSize);
 
         // Load shader
         shader = std::make_shared<Shader>(VERTEX_SHADER_SRC, FRAGMENT_SHADER_SRC);
-        projMatUnif = shader->getUniform("projMatUnif");
-        posUnif = shader->getUniform("posUnif");
+        // projMatUnif = shader->getUniform("projMatUnif");
+        // posUnif = shader->getUniform("posUnif");
+        scaleUnif = shader->getUniform("scaleUnif");
+        offsetUnif = shader->getUniform("offsetUnif");
         samplerUnif = shader->getUniform("sampler");
         posAttr = shader->getAttribute("posAttr");
         colorAttr = shader->getAttribute("colorAttr");
@@ -57,11 +58,11 @@ namespace gfx::OpenGL {
         // TODO
     }
 
-    Size Painter::getCanvasSize() const {
+    Sizei Painter::getCanvasSize() const {
         return canvasSize;
     }
 
-    void Painter::setCanvasSize(const Size& canvasSize) {
+    void Painter::setCanvasSize(const Sizei& canvasSize) {
         // Update size
         this->canvasSize = canvasSize;
 
@@ -69,16 +70,16 @@ namespace gfx::OpenGL {
         genProjMatrix();
 
         // Update the stencil
-        stencil = Rect(Point(0, 0), Point(canvasSize.x - 1, canvasSize.y - 1));
+        stencil = Recti(Pointi(0, 0), canvasSize - Sizei(1, 1));
         updateStencil();
     }
 
     void Painter::beginRender() {
         // Reset the stencil and offset
-        if (!stencils.empty()) { stencils = std::stack<Rect>(); }
-        if (!offsets.empty()) { offsets = std::stack<Point>(); }
-        stencil = Rect(Point(0, 0), Point(canvasSize.x - 1, canvasSize.y - 1));
-        offset = Point(0, 0);
+        if (!stencils.empty()) { stencils = std::stack<Recti>(); }
+        if (!offsets.empty()) { offsets = std::stack<Pointi>(); }
+        stencil = Recti(Pointi(0, 0), Pointi(canvasSize.x - 1, canvasSize.y - 1));
+        offset = Pointi(0, 0);
 
         // Setup OpenGL options
         glDisable(GL_DEPTH_TEST);
@@ -91,7 +92,7 @@ namespace gfx::OpenGL {
 
         // Load shader and set uniform variables
         shader->use();
-        glUniformMatrix4fv(projMatUnif, 1, GL_FALSE, glm::value_ptr(projMat));
+        glUniform2fv(scaleUnif, 1, scaleVec.data);
         glUniform1i(samplerUnif, 0);
 
         // Set the stencil and offset
@@ -112,7 +113,7 @@ namespace gfx::OpenGL {
         flush();
     }
 
-    void Painter::pushStencil(const Rect& stencil) {
+    void Painter::pushStencil(const Recti& stencil) {
         // Flush any remaining draw commands
         flush();
 
@@ -120,8 +121,8 @@ namespace gfx::OpenGL {
         stencils.push(this->stencil);
 
         // Compute the new stencil
-        Rect absStencil(stencil.getA() + offset, stencil.getB() + offset);
-        Rect newStencil = this->stencil & absStencil;
+        Recti absStencil(stencil.A() + offset, stencil.B() + offset);
+        Recti newStencil = this->stencil & absStencil;
 
         // Update the stencil
         this->stencil = newStencil;
@@ -143,7 +144,7 @@ namespace gfx::OpenGL {
         updateStencil();
     }
 
-    void Painter::pushOffset(const Point& offset) {
+    void Painter::pushOffset(const Pointi& offset) {
         // Flush any remaining draw commands
         flush();
 
@@ -170,52 +171,48 @@ namespace gfx::OpenGL {
         updateOffset();
     }
 
-    void Painter::drawLine(const Point& a, const Point& b, const Color& color, int thickness) {
+    void Painter::drawLine(const Point& a, const Point& b, const Color& color, float thickness) {
         // Select the null texutre
         selectTexture(NULL_TEXTURE);
-        
-        // Convert coordinates to floating point
-        Vec2f af = Vec2f(a.x, a.y);
-        Vec2f bf = Vec2f(b.x, b.y);
 
         // Compute forward vector
-        Vec2f forw = bf - af;
-        forw = forw * 0.5f / forw.norm();
+        Vec2f forw = b - a;
+        forw = forw * 0.5f / forw.N();
 
         // Compute normal vector
         Vec2f norm(forw.y, -forw.x);
-        norm = norm * (float)thickness;
+        norm = norm * thickness;
 
         // Create vertices
-        int tl = addVertex(af - forw - norm, color);
-        int tr = addVertex(bf + forw - norm, color);
-        int bl = addVertex(af - forw + norm, color);
-        int br = addVertex(bf + forw + norm, color);
+        int tl = addVertex(a - forw - norm, color);
+        int tr = addVertex(b + forw - norm, color);
+        int bl = addVertex(a - forw + norm, color);
+        int br = addVertex(b + forw + norm, color);
 
         // Create triangles
         addTri(tl, tr, bl);
         addTri(tr, bl, br);
     }
 
-    void Painter::drawRect(const Rect& area, const Color& color, int thickness, int borderRadius) {
+    void Painter::drawRect(const Rect& area, const Color& color, float thickness, float borderRadius) {
         // Select the null texutre
         selectTexture(NULL_TEXTURE);
         
         // The triangulation depends on whether the border is rounded
-        if (borderRadius) {
+        if (borderRadius > 0.0f) {
             // TODO
         }
         else {
             // Create vertices
-            float w = thickness - 1;
-            int otl = addVertex(Vec2f(area.getA().x, area.getA().y) + Vec2f(-0.5f, -0.5f), color);
-            int otr = addVertex(Vec2f(area.getB().x, area.getA().y) + Vec2f(0.5f, -0.5f), color);
-            int obl = addVertex(Vec2f(area.getA().x, area.getB().y) + Vec2f(-0.5f, 0.5f), color);
-            int obr = addVertex(Vec2f(area.getB().x, area.getB().y) + Vec2f(0.5f, 0.5f), color);
-            int itl = addVertex(Vec2f(area.getA().x, area.getA().y) + Vec2f(0.5f + w, 0.5f + w), color);
-            int itr = addVertex(Vec2f(area.getB().x, area.getA().y) + Vec2f(-0.5f - w, 0.5f + w), color);
-            int ibl = addVertex(Vec2f(area.getA().x, area.getB().y) + Vec2f(0.5f + w, -0.5f - w), color);
-            int ibr = addVertex(Vec2f(area.getB().x, area.getB().y) + Vec2f(-0.5f - w, -0.5f - w), color);
+            float w = thickness - 1.0f;
+            int otl = addVertex(Vec2f(area.A().x, area.A().y) + Vec2f(-0.5f, -0.5f), color);
+            int otr = addVertex(Vec2f(area.B().x, area.A().y) + Vec2f(0.5f, -0.5f), color);
+            int obl = addVertex(Vec2f(area.A().x, area.B().y) + Vec2f(-0.5f, 0.5f), color);
+            int obr = addVertex(Vec2f(area.B().x, area.B().y) + Vec2f(0.5f, 0.5f), color);
+            int itl = addVertex(Vec2f(area.A().x, area.A().y) + Vec2f(0.5f + w, 0.5f + w), color);
+            int itr = addVertex(Vec2f(area.B().x, area.A().y) + Vec2f(-0.5f - w, 0.5f + w), color);
+            int ibl = addVertex(Vec2f(area.A().x, area.B().y) + Vec2f(0.5f + w, -0.5f - w), color);
+            int ibr = addVertex(Vec2f(area.B().x, area.B().y) + Vec2f(-0.5f - w, -0.5f - w), color);
 
             // Create triangles
             addTri(otl, otr, itl); // Top
@@ -229,7 +226,7 @@ namespace gfx::OpenGL {
         }
     }
 
-    void Painter::fillRect(const Rect& area, const Color& color, int borderRadius) {
+    void Painter::fillRect(const Rect& area, const Color& color, float borderRadius) {
         // Select the null texutre
         selectTexture(NULL_TEXTURE);
         
@@ -239,10 +236,10 @@ namespace gfx::OpenGL {
         }
         else {
             // Create vertices
-            int tl = addVertex(Vec2f(area.getA().x, area.getA().y) + Vec2f(-0.5f, -0.5f), color);
-            int tr = addVertex(Vec2f(area.getB().x, area.getA().y) + Vec2f(0.5f, -0.5f), color);
-            int bl = addVertex(Vec2f(area.getA().x, area.getB().y) + Vec2f(-0.5f, 0.5f), color);
-            int br = addVertex(Vec2f(area.getB().x, area.getB().y) + Vec2f(0.5f, 0.5f), color);
+            int tl = addVertex(Vec2f(area.A().x, area.A().y) + Vec2f(-0.5f, -0.5f), color);
+            int tr = addVertex(Vec2f(area.B().x, area.A().y) + Vec2f(0.5f, -0.5f), color);
+            int bl = addVertex(Vec2f(area.A().x, area.B().y) + Vec2f(-0.5f, 0.5f), color);
+            int br = addVertex(Vec2f(area.B().x, area.B().y) + Vec2f(0.5f, 0.5f), color);
 
             // Create triangles
             addTri(tl, tr, bl);
@@ -250,7 +247,7 @@ namespace gfx::OpenGL {
         }
     }
 
-    void Painter::drawPolygon(const Point& position, const Polygon& polygon, const Size& size, const Color& color, int thickness) {
+    void Painter::drawPolygon(const Point& position, const Polygon& polygon, const Size& size, const Color& color, float thickness) {
         // TODO
     }
 
@@ -259,27 +256,27 @@ namespace gfx::OpenGL {
         selectTexture(NULL_TEXTURE);
 
         // Create vertices
-        int first = vertices.size();
+        int first = (int)vertices.size();
         for (const auto& v : polygon.getVertices()) {
             addVertex(Vec2f(position.x + v.x*size.x - 0.5f, position.y + v.y*size.y - 0.5f), color);
         }
 
         // Create triangles
         for (const auto& t : polygon.getTriangles()) {
-            addTri(first + t.a, first + t.b, first + t.c);
+            addTri(first + t[0], first + t[1], first + t[2]);
         }
     }
 
-    void Painter::drawArc(const Point& center, int diameter, float startAngle, float endAngle, const Color& color, int thickness) {
+    void Painter::drawArc(const Point& center, float diameter, float startAngle, float endAngle, const Color& color, float thickness) {
         // Select the null texutre
         selectTexture(NULL_TEXTURE);
         
         // Compute external and internal radii
-        float re = (float)diameter / 2.0f;
-        float ri = re - (float)thickness;
+        float re = diameter / 2.0f;
+        float ri = re - thickness;
 
         // Compute angle interval
-        int vcount = ceil(fabsf((endAngle - startAngle) * re));
+        int vcount = (int)ceil(fabsf((endAngle - startAngle) * re));
         float dtheta = (endAngle - startAngle) / vcount;
         vcount++;
 
@@ -296,23 +293,23 @@ namespace gfx::OpenGL {
         }
 
         // Create triangles
-        int last = vertices.size() - 2;
-        int first = vertices.size() - vcount*2;
+        int last = (int)vertices.size() - 2;
+        int first = (int)vertices.size() - vcount*2;
         for (int i = first; i < last; i += 2) {
             addTri(i, i+1, i+2);
             addTri(i+1, i+2, i+3);
         }
     }
 
-    void Painter::fillArc(const Point& center, int diameter, float startAngle, float endAngle, const Color& color) {
+    void Painter::fillArc(const Point& center, float diameter, float startAngle, float endAngle, const Color& color) {
         // Select the null texutre
         selectTexture(NULL_TEXTURE);
 
         // Compute radius
-        float re = (float)diameter / 2.0f;
+        float re = diameter / 2.0f;
 
         // Compute angle interval
-        int vcount = ceil(fabsf((endAngle - startAngle) * re));
+        int vcount = (int)ceil(fabsf((endAngle - startAngle) * re));
         float dtheta = (endAngle - startAngle) / vcount;
         vcount++;
 
@@ -328,8 +325,8 @@ namespace gfx::OpenGL {
         }
 
         // Create triangles
-        int last = vertices.size() - 1;
-        int first = vertices.size() - vcount;
+        int last = (int)vertices.size() - 1;
+        int first = (int)vertices.size() - vcount;
         for (int i = first; i < last; i++) {
             addTri(i, i+1, c);
         }
@@ -381,7 +378,7 @@ namespace gfx::OpenGL {
 
     Size Painter::measureText(Font& font, const char* str) {
         // Begin the cursor at 0
-        double cursor = 0.0;
+        Size size(0.0f, font.getSize());
 
         // Prepare the font
         fc->prepareFont(font);
@@ -393,22 +390,22 @@ namespace gfx::OpenGL {
             if (!id) { break; }
 
             // Compute the sub-pixel alignment
-            int x = floorf(cursor);
-            int subx = floorf((cursor - x) * 4.0f);
+            int x = floorf(size.x);
+            int subx = floorf((size.x - x) * 4.0f);
 
             // Fetch glyph info
             GlyphInfo info = fc->getGlyph(font, id, subx);
 
             // Update cursor
-            cursor += info.xAdvance;
+            size.x += info.xAdvance;
         }
 
-        return Size(ceil(cursor), font.getSize());
+        return size;
     }
 
     void Painter::drawText(const Point& position, const char* str, Font& font, const Color& color, HRef href, VRef vref) {
-        // Initialize cursor
-        Vec2f cursor(position.x, position.y);
+        // Quantize the cursor position
+        Vec2f cursor(roundf(position.x * 4.0f) * 0.25f, roundf(position.y * 4.0f) * 0.25f);
 
         // Do horizontal alignment
         if (href == H_REF_LEFT) {
@@ -443,10 +440,10 @@ namespace gfx::OpenGL {
             else if (vref == V_REF_TOP) {
                 cursor.y += metrics.ascender;
             }
-
-            // Quantize the position (TODO: Change this if fractional y position support is added)
-            cursor.y = round(cursor.y);
         }
+
+        // Quantize the starting cursor to the available subpixel increment
+        cursor = Vec2f(roundf(cursor.x * 4.0f) * 0.25f, roundf(cursor.y));
         
         // Iterate over all characters
         while (true) {
@@ -485,8 +482,9 @@ namespace gfx::OpenGL {
     }
 
     void Painter::genProjMatrix() {
-        // Create matrix to convert from (0,0 -> w,h) to (-1,1 -> 1,-1)
-        projMat = glm::ortho(-0.5f, (float)(canvasSize.x - 1) + 0.5f, (float)(canvasSize.y - 1) + 0.5f, -0.5f);
+        // Compute the scale and offset vectors
+        scaleVec = Vec2f(2.0f / (float)canvasSize.x, -2.0f / (float)canvasSize.y);
+        offsetVec = scaleVec * 0.5f + Vec2f(-1.0f, 1.0f);
     }
 
     int Painter::addVertex(const Vec2f& pos, const Color& color, const Vec2f& texCoord) {
@@ -551,11 +549,15 @@ namespace gfx::OpenGL {
     }
 
     void Painter::updateStencil() {
-        glScissor(stencil.getA().x, canvasSize.y - stencil.getB().y - 1, stencil.getSize().x, stencil.getSize().y);
+        glScissor(stencil.A().x, canvasSize.y - stencil.B().y - 1, stencil.size().x, stencil.size().y);
     }
 
     void Painter::updateOffset() {
-        glUniform2f(posUnif, offset.x, offset.y);
+        // Compute total offset
+        Vec2f total = offsetVec + Vec2f((float)offset.x * (1.0f / (float)canvasSize.x), -(float)offset.y * (1.0f / (float)canvasSize.y));
+
+        // Send the value to OpenGL
+        glUniform2fv(offsetUnif, 1, total.data);
     }
 
     void Painter::selectTexture(GLuint id) {

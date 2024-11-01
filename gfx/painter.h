@@ -1,5 +1,5 @@
 #pragma once
-#include "vec2.h"
+#include "types.h"
 #include "color.h"
 #include "polygon.h"
 #include "font.h"
@@ -25,18 +25,18 @@ namespace gfx {
         V_REF_BOTTOM
     };
 
-    // TODO: Switch to floats everywhere? Would be nice for arbitrary drawing but slower for devices without hardware floats due to conversion.
+    // TODO: Switch to floats !!!!!!!!!!!!!!!!!!!!!!
 
     class Painter {
     public:
         // Virtual destructor
         virtual ~Painter() {}
 
-        virtual void pushStencil(const Rect& stencil) = 0;
+        virtual void pushStencil(const Recti& stencil) = 0;
 
         virtual void popStencil() = 0;
 
-        virtual void pushOffset(const Point& offset) = 0;
+        virtual void pushOffset(const Pointi& offset) = 0;
 
         virtual void popOffset() = 0;
 
@@ -47,7 +47,7 @@ namespace gfx {
          * @param color Color of the line.
          * @param thickness Thickness of the line in pixels
         */
-        virtual void drawLine(const Point& a, const Point& b, const Color& color, int thickness = 1) = 0;
+        virtual void drawLine(const Point& a, const Point& b, const Color& color, float thickness = 1) = 0;
 
         /**
          * Draw a hollow rectangle.
@@ -56,7 +56,7 @@ namespace gfx {
          * @param thickness Thickness of the border in pixels.
          * @param borderRadius Rounding radius in pixels.
         */
-        virtual void drawRect(const Rect& area, const Color& color, int thickness = 1, int borderRadius = 0) = 0;
+        virtual void drawRect(const Rect& area, const Color& color, float thickness = 1, float borderRadius = 0) = 0;
 
         /**
          * Draw a filled rectangle.
@@ -64,7 +64,7 @@ namespace gfx {
          * @param color Color of the rectangle.
          * @param borderRadius Rounding radius in pixels.
         */
-        virtual void fillRect(const Rect& area, const Color& color, int borderRadius = 0) = 0;
+        virtual void fillRect(const Rect& area, const Color& color, float borderRadius = 0) = 0;
 
         /**
          * Draw a hollow polygon.
@@ -74,7 +74,7 @@ namespace gfx {
          * @param color Color of the polygon.
          * @param thickness Thickness of the border in pixels.
         */
-        virtual void drawPolygon(const Point& position, const Polygon& polygon, const Size& size, const Color& color, int thickness = 1) = 0;
+        virtual void drawPolygon(const Point& position, const Polygon& polygon, const Size& size, const Color& color, float thickness = 1) = 0;
 
         /**
          * Draw a filled polygon.
@@ -93,7 +93,7 @@ namespace gfx {
          * @param endAngle Angle at which the arc ends.
          * @param color  Color of the arc.
         */
-        virtual void drawArc(const Point& center, int diameter, float startAngle, float endAngle, const Color& color, int thickness = 1) = 0;
+        virtual void drawArc(const Point& center, float diameter, float startAngle, float endAngle, const Color& color, float thickness = 1) = 0;
 
         /**
          * Draw a filled arc. The arc is drawn in a clockwise direction with the reference point being on the left.
@@ -103,7 +103,7 @@ namespace gfx {
          * @param endAngle Angle at which the arc ends.
          * @param color  Color of the arc.
         */
-        virtual void fillArc(const Point& center, int diameter, float startAngle, float endAngle, const Color& color) = 0;
+        virtual void fillArc(const Point& center, float diameter, float startAngle, float endAngle, const Color& color) = 0;
 
         /**
          * Measure the size of a string.

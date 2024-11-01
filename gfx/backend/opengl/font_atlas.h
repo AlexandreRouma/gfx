@@ -1,6 +1,6 @@
 #pragma once
 #include "glad/glad.h"
-#include "../../vec2.h"
+#include "../../types.h"
 #include <functional>
 
 namespace gfx::OpenGL {
@@ -34,6 +34,7 @@ namespace gfx::OpenGL {
         */
         FontAtlas(const std::function<void(int)>& bindTexture);
 
+        // Destructor
         ~FontAtlas();
 
         /**
@@ -54,7 +55,7 @@ namespace gfx::OpenGL {
          * @param data Bitmap data of the glyph in 8bit per pixel format.
          * @param position Outputs the position that the glyph was added to in the atlas.
         */
-        bool addGlyph(const Size& size, uint8_t* data, GlyphCords& position);
+        bool addGlyph(const Sizei& size, uint8_t* data, GlyphCords& position);
 
         /**
          * Push the texture data to the GPU.
@@ -65,7 +66,7 @@ namespace gfx::OpenGL {
         int texSize;
         GLuint textureId;
 
-        Point cursor;
+        Vec2i cursor = Vec2i(0);
         int skyline = 0;
 
         std::function<void(int)> bindTexture;

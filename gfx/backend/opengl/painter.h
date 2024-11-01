@@ -1,6 +1,5 @@
 #pragma once
 #include "../../painter.h"
-#include "glm/glm.hpp"
 #include "shader.h"
 #include "font_cache.h"
 #include <memory>
@@ -22,21 +21,22 @@ namespace gfx::OpenGL {
          * Create an OpenGL-based painter. OpenGL must be loaded and available when this constructor is called.
          * @param canvasSize Size of the canvas.
         */
-        Painter(const Size& canvasSize);
+        Painter(const Sizei& canvasSize);
 
+        // Destructor
         ~Painter();
 
         /**
          * Get the size of the canvas.
          * @return Size of the canvas.
         */
-       Size getCanvasSize() const;
+       Sizei getCanvasSize() const;
 
         /**
          * Set the size of the canvas.
          * @param canvasSize Size of the canvas.
         */
-        void setCanvasSize(const Size& canvasSize);
+        void setCanvasSize(const Sizei& canvasSize);
 
         /**
          * Start the rendering procedure.
@@ -48,11 +48,11 @@ namespace gfx::OpenGL {
         */
         void endRender();
 
-        void pushStencil(const Rect& stencil);
+        void pushStencil(const Recti& stencil);
 
         void popStencil();
 
-        void pushOffset(const Point& offset);
+        void pushOffset(const Pointi& offset);
 
         void popOffset();
 
@@ -63,7 +63,7 @@ namespace gfx::OpenGL {
          * @param color Color of the line.
          * @param thickness Thickness of the line in pixels
         */
-        void drawLine(const Point& a, const Point& b, const Color& color, int thickness = 1);
+        void drawLine(const Point& a, const Point& b, const Color& color, float thickness = 1);
 
         /**
          * Draw a hollow rectangle.
@@ -72,7 +72,7 @@ namespace gfx::OpenGL {
          * @param thickness Thickness of the border in pixels.
          * @param borderRadius Rounding radius in pixels.
         */
-        void drawRect(const Rect& area, const Color& color, int thickness = 1, int borderRadius = 0);
+        void drawRect(const Rect& area, const Color& color, float thickness = 1, float borderRadius = 0);
 
         /**
          * Draw a filled rectangle.
@@ -80,7 +80,7 @@ namespace gfx::OpenGL {
          * @param color Color of the rectangle.
          * @param borderRadius Rounding radius in pixels.
         */
-        void fillRect(const Rect& area, const Color& color, int borderRadius = 0);
+        void fillRect(const Rect& area, const Color& color, float borderRadius = 0);
 
         /**
          * Draw a hollow polygon.
@@ -90,7 +90,7 @@ namespace gfx::OpenGL {
          * @param color Color of the polygon.
          * @param thickness Thickness of the border in pixels.
         */
-        void drawPolygon(const Point& position, const Polygon& polygon, const Size& size, const Color& color, int thickness = 1);
+        void drawPolygon(const Point& position, const Polygon& polygon, const Size& size, const Color& color, float thickness = 1);
 
         /**
          * Draw a filled polygon.
@@ -109,7 +109,7 @@ namespace gfx::OpenGL {
          * @param endAngle Angle at which the arc ends.
          * @param color  Color of the arc.
         */
-        void drawArc(const Point& center, int diameter, float startAngle, float endAngle, const Color& color, int thickness = 1);
+        void drawArc(const Point& center, float diameter, float startAngle, float endAngle, const Color& color, float thickness = 1);
 
         /**
          * Draw a filled arc. The arc is drawn in a clockwise direction with the reference point being on the left.
@@ -119,7 +119,7 @@ namespace gfx::OpenGL {
          * @param endAngle Angle at which the arc ends.
          * @param color  Color of the arc.
         */
-        void fillArc(const Point& center, int diameter, float startAngle, float endAngle, const Color& color);
+        void fillArc(const Point& center, float diameter, float startAngle, float endAngle, const Color& color);
 
         /**
          * Measure the size of a string.
@@ -152,16 +152,16 @@ namespace gfx::OpenGL {
         void updateOffset();
         // TODO: Function to load the texture
 
-        Size canvasSize;
+        Sizei canvasSize;
         int VBOCapacity = 0;
         int EBOCapacity = 0;
-        std::stack<Rect> stencils;
-        std::stack<Point> offsets;
+        std::stack<Recti> stencils;
+        std::stack<Pointi> offsets;
 
         // GPU-side variables
         std::shared_ptr<Shader> shader;
-        GLuint projMatUnif;
-        GLuint posUnif;
+        GLuint scaleUnif;
+        GLuint offsetUnif;
         GLuint samplerUnif;
         GLuint posAttr;
         GLuint colorAttr;
@@ -169,11 +169,12 @@ namespace gfx::OpenGL {
         GLuint activeTexture;
 
         // CPU-side OpenGL variables
-        glm::mat4 projMat;
+        Vec2f scaleVec;
+        Vec2f offsetVec;
         std::vector<VertexAttrib> vertices;
         std::vector<int> indices;
-        Rect stencil;
-        Point offset;
+        Recti stencil;
+        Pointi offset;
 
         // OpenGL buffers objects
         GLuint VAO;

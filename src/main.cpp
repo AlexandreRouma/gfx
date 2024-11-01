@@ -15,6 +15,46 @@
 #define M_PI 3.141592653589793238462643383279502884197
 #endif
 
+void drawButton(gfx::Painter& painter, gfx::Font& font, gfx::Point pos, gfx::HRef href, gfx::VRef vref) {
+    // TODO: Figure out why the +1 is required for it to look correct...
+    // TODO: Change rect to use .A() and .B() for conciseness
+    // TODO: Use float as default to remove f suffix
+
+    // Draw the background
+    gfx::Rect btn(pos, gfx::Size(80.0f, 22.0f));
+    painter.fillRect(btn, gfx::Color(0.15, 0.15, 0.15, 1.0));
+
+    // Select the position of the text depending on its reference
+    gfx::Point textPos;
+    switch (href) {
+    case gfx::H_REF_LEFT:
+        textPos.x = btn.A().x;
+        break;
+    case gfx::H_REF_CENTER:
+        textPos.x = ((btn.A() + btn.B()) * 0.5f).x;
+        break;
+    case gfx::H_REF_RIGHT:
+        textPos.x = btn.B().x;
+        break;
+    default:
+        break;
+    }
+    switch (vref) {
+    case gfx::V_REF_TOP:
+        textPos.y = btn.A().y;
+        break;
+    case gfx::V_REF_CENTER:
+        textPos.y = ((btn.A() + btn.B()) * 0.5f).y;
+        break;
+    case gfx::V_REF_BOTTOM:
+        textPos.y = btn.B().y;
+        break;
+    default:
+        break;
+    }
+    painter.drawText(textPos, "Refreshj", font, gfx::Color(1.0, 1.0, 1.0, 1.0), href, vref);
+}
+
 int main() {
     try {
         // Init GLFW
@@ -45,7 +85,7 @@ int main() {
 #endif
         bool swapNeeded = true;
 
-        gfx::Size winSize(1280, 720);
+        gfx::Sizei winSize(1280, 720);
 
         // Create windows
         GLFWwindow* glfwWindow = glfwCreateWindow(winSize.x, winSize.y, "GFX Demo", NULL, NULL);
@@ -65,25 +105,31 @@ int main() {
         // Load the fonts
         painter.fc->loadFont("../vendor/res/Roboto-Medium.ttf");
         painter.fc->loadFont("../vendor/res/Roboto-Regular.ttf");
+        painter.fc->loadFont("../vendor/res/arial.ttf");
+        painter.fc->loadFont("../vendor/res/OpenSans-Medium.ttf");
+        painter.fc->loadFont("../vendor/res/OpenSans-Regular.ttf");
+        painter.fc->loadFont("../vendor/res/NotoSans-Medium.ttf");
+        painter.fc->loadFont("../vendor/res/NotoSans-Regular.ttf");
 
         int frameCount = 0;
         auto lastTime = std::chrono::high_resolution_clock::now();
 
-        gfx::Font font("Roboto Regular", 14);
+        gfx::Font font("Open Sans Medium", 14);
         gfx::Color color(21.0/255.0, 132.0/255.0, 224.0/255.0, 1);
 
         // Create a checkmark
-        std::vector<gfx::Pointf> checkmarkVerts = {
-            gfx::Pointf(0.3671875, 0.8671875),
-            gfx::Pointf(0.0, 0.5234375),
-            gfx::Pointf(0.1328125, 0.3984375),
-            gfx::Pointf(0.3671875, 0.625),
-            gfx::Pointf(0.84375, 0.125),
-            gfx::Pointf(1.0, 0.25),
+        std::vector<gfx::Point> checkmarkVerts = {
+            gfx::Point(0.3671875, 0.8671875),
+            gfx::Point(0.0, 0.5234375),
+            gfx::Point(0.1328125, 0.3984375),
+            gfx::Point(0.3671875, 0.625),
+            gfx::Point(0.84375, 0.125),
+            gfx::Point(1.0, 0.25),
         };
         gfx::Polygon checkmark(checkmarkVerts);
 
         double counter = -M_PI * 0.5;
+        float test = 0;
 
         while (true) {
             glfwPollEvents();
@@ -105,12 +151,12 @@ int main() {
 
             float input = (sin(counter) + 1.0)*0.5;
 
-            // // Draw a checkmark
-            // painter.fillRect(gfx::Rect(gfx::Point(98, 98), gfx::Point(118, 118)), gfx::Color(0.15, 0.15, 0.15, 1.0));
-            // if ((input > 0.25f && input < 0.5f) || (input > 0.75f && input < 1.0f)) {
-            //     painter.fillPolygon(gfx::Point(100, 100), checkmark, gfx::Size(17, 17), color);
-            // }
-            // painter.drawText(gfx::Point(123, 114), "The quick brown fox jumps over the lazy dog.", font, gfx::Color(1.0, 1.0, 1.0, 1.0));
+            // Draw a checkmark
+            painter.fillRect(gfx::Rect(gfx::Point(98, 98+60), gfx::Point(118, 118+60)), gfx::Color(0.15, 0.15, 0.15, 1.0));
+            if ((input > 0.25f && input < 0.5f) || (input > 0.75f && input < 1.0f)) {
+                painter.fillPolygon(gfx::Point(100, 100+60), checkmark, gfx::Size(17, 17), color);
+            }
+            painter.drawText(gfx::Point(123, 114+60), "The quick brown fox jumps over the lazy dog.", font, gfx::Color(1.0, 1.0, 1.0, 1.0));
 
             // painter.pushStencil(gfx::Rect(gfx::Point(500, 500), gfx::Size(128, 128)));
             // painter.pushOffset(gfx::Point(0, 0));
@@ -123,17 +169,19 @@ int main() {
             // painter.popOffset();
             // painter.popStencil();
 
-            painter.drawLine(gfx::Point(0, 100), gfx::Point(400, 100), gfx::Color(0.0, 1.0, 0.0, 1.0));
-            painter.drawText(gfx::Point(50, 100), "Ag!", font, gfx::Color(1.0, 1.0, 1.0, 1.0), gfx::H_REF_CENTER, gfx::V_REF_BOTTOM);
-            painter.drawText(gfx::Point(150, 100), "Ag!", font, gfx::Color(1.0, 1.0, 1.0, 1.0), gfx::H_REF_CENTER, gfx::V_REF_BASELINE);
-            painter.drawText(gfx::Point(250, 100), "Ag!", font, gfx::Color(1.0, 1.0, 1.0, 1.0), gfx::H_REF_CENTER, gfx::V_REF_CENTER);
-            painter.drawText(gfx::Point(350, 100), "Ag!", font, gfx::Color(1.0, 1.0, 1.0, 1.0), gfx::H_REF_CENTER, gfx::V_REF_TOP);
+            painter.drawLine(gfx::Point(0 + test, 100), gfx::Point(400 + test, 100), gfx::Color(0.0, 1.0, 0.0, 1.0));
+            painter.drawText(gfx::Point(50 + test, 100), "Ag!", font, gfx::Color(1.0, 1.0, 1.0, 1.0), gfx::H_REF_CENTER, gfx::V_REF_BOTTOM);
+            painter.drawText(gfx::Point(150 + test, 100), "Ag!", font, gfx::Color(1.0, 1.0, 1.0, 1.0), gfx::H_REF_CENTER, gfx::V_REF_BASELINE);
+            painter.drawText(gfx::Point(250 + test, 100), "Ag!", font, gfx::Color(1.0, 1.0, 1.0, 1.0), gfx::H_REF_CENTER, gfx::V_REF_CENTER);
+            painter.drawText(gfx::Point(350 + test, 100), "Ag!", font, gfx::Color(1.0, 1.0, 1.0, 1.0), gfx::H_REF_CENTER, gfx::V_REF_TOP);
 
-            painter.drawText(gfx::Point(50, 140), "Bottom", font, gfx::Color(1.0, 1.0, 1.0, 1.0), gfx::H_REF_CENTER, gfx::V_REF_BASELINE);
-            painter.drawText(gfx::Point(150, 140), "Baseline", font, gfx::Color(1.0, 1.0, 1.0, 1.0), gfx::H_REF_CENTER, gfx::V_REF_BASELINE);
-            painter.drawText(gfx::Point(250, 140), "Center", font, gfx::Color(1.0, 1.0, 1.0, 1.0), gfx::H_REF_CENTER, gfx::V_REF_BASELINE);
-            painter.drawText(gfx::Point(350, 140), "Top", font, gfx::Color(1.0, 1.0, 1.0, 1.0), gfx::H_REF_CENTER, gfx::V_REF_BASELINE);
+            painter.drawText(gfx::Point(50 + test, 140), "Bottom", font, gfx::Color(1.0, 1.0, 1.0, 1.0), gfx::H_REF_CENTER, gfx::V_REF_BASELINE);
+            painter.drawText(gfx::Point(150 + test, 140), "Baseline", font, gfx::Color(1.0, 1.0, 1.0, 1.0), gfx::H_REF_CENTER, gfx::V_REF_BASELINE);
+            painter.drawText(gfx::Point(250 + test, 140), "Center", font, gfx::Color(1.0, 1.0, 1.0, 1.0), gfx::H_REF_CENTER, gfx::V_REF_BASELINE);
+            painter.drawText(gfx::Point(350 + test, 140), "Top", font, gfx::Color(1.0, 1.0, 1.0, 1.0), gfx::H_REF_CENTER, gfx::V_REF_BASELINE);
 
+            test += 0.25f;
+            if (test >= 600.0f) { test = 0.0f; }
             counter += 0.01;
             while (counter > M_PI) { counter -= 2.0*M_PI; }
             while (counter < -M_PI) { counter += 2.0*M_PI; }

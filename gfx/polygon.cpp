@@ -1,7 +1,7 @@
 #include "polygon.h"
 
 namespace gfx {
-    Polygon::Polygon(const std::vector<Pointf>& vertices) {
+    Polygon::Polygon(const std::vector<Point>& vertices) {
         // Save vertices
         this->vertices = vertices;
 
@@ -14,19 +14,19 @@ namespace gfx {
         triangulate(vertices, vertInds);
     }
 
-    const std::vector<Pointf>& Polygon::getVertices() const {
+    const std::vector<Point>& Polygon::getVertices() const {
         return vertices;
     }
 
-    const std::vector<TriIndices> Polygon::getTriangles() const {
+    const std::vector<Vec3i> Polygon::getTriangles() const {
         return triangles;
     }
 
-    void Polygon::triangulate(const std::vector<Pointf>& verts, const std::vector<int>& vertInds) {
+    void Polygon::triangulate(const std::vector<Point>& verts, const std::vector<int>& vertInds) {
         // Find spikes in the remaining vertices
-        std::vector<Pointf> unusedVertices;
+        std::vector<Point> unusedVertices;
         std::vector<int> unusedVertInds;
-        int vertCount = verts.size();
+        int vertCount = (int)verts.size();
         for (int i = 0; i < vertCount; i++) {
             // Save the vertex
             unusedVertices.push_back(verts[i]);
@@ -38,9 +38,9 @@ namespace gfx {
             // Get points
             int ib = i+1;
             int ic = (i+2)%vertCount;
-            Pointf a = verts[i];
-            Pointf b = verts[ib];
-            Pointf c = verts[ic];
+            Point a = verts[i];
+            Point b = verts[ib];
+            Point c = verts[ic];
 
             // Get the angle between the vectors
             Vec2f va = c - a;
@@ -55,8 +55,7 @@ namespace gfx {
 
                 // If the triangle contains no point, it can be saved
                 if (!found) {
-                    TriIndices tri = { vertInds[i], vertInds[ib], vertInds[ic] };
-                    triangles.push_back(tri);
+                    triangles.push_back(Vec3i(vertInds[i], vertInds[ib], vertInds[ic]));
                     i++;
                 }
             }

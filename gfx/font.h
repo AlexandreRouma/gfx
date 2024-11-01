@@ -6,7 +6,7 @@ namespace gfx {
     class Font {
     public:
         /**
-         * Create a font from name and size.
+         * Create a font from name and size. (TODO: Check if size can be a float)
         */
         Font(const std::string& name, int size);
 

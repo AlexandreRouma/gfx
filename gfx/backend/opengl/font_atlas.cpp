@@ -38,7 +38,7 @@ namespace gfx::OpenGL {
         return textureId;
     }
 
-    bool FontAtlas::addGlyph(const Size& size, uint8_t* data, GlyphCords& coords) {
+    bool FontAtlas::addGlyph(const Sizei& size, uint8_t* data, GlyphCords& coords) {
         // Deal with missing space
         bool notEnoughWidth = (texSize - cursor.x < size.x);
         if (notEnoughWidth) {
@@ -49,11 +49,12 @@ namespace gfx::OpenGL {
             else if (notEnoughWidth && texSize - skyline < size.y) { return false; }
 
             // Then all we need to do is go to the next line
-            cursor = Point(0, skyline);
+            cursor = Vec2i(0, skyline);
         }
 
         // Blit to the bitmap
         uint8_t* bm = ((uint8_t*)&bitmap[cursor.y*texSize + cursor.x]) + 3;
+        
         for (int i = 0; i < size.y; i++) {
             for (int j = 0; j < size.x; j++) {
                 *bm = *(data++);
@@ -66,13 +67,13 @@ namespace gfx::OpenGL {
         textureUpToDate = false;
 
         // Save area of glyph
-        float ratio = 1.0f / texSize;
-        Vec2f a(cursor.x, cursor.y);
-        Vec2f b(cursor.x + size.x, cursor.y + size.y);
-        coords.TL = a * ratio;
+        float ratio = 1.0f / (float)texSize;
+        Vec2i a = cursor;
+        Vec2i b(cursor.x + size.x, cursor.y + size.y);
+        coords.TL = Vec2f(a.x, a.y) * ratio;
         coords.TR = Vec2f(b.x, a.y) * ratio;
         coords.BL = Vec2f(a.x, b.y) * ratio;
-        coords.BR = b * ratio;
+        coords.BR = Vec2f(b.x, b.y) * ratio;
 
         // Update the skyline
         if (cursor.y + size.y > skyline) {

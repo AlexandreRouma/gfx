@@ -1,6 +1,6 @@
 #pragma once
 #include "font_atlas.h"
-#include "../../vec2.h"
+#include "../../types.h"
 #include "../../font.h"
 #include <map>
 #include <unordered_map>
@@ -25,8 +25,8 @@ namespace gfx::OpenGL {
 
     struct GlyphInfo {
         // Glyph geometry
-        Size size;
-        Vec2f offset;
+        Sizei size;
+        Vec2i offset;
 
         // Texture location
         GlyphCords coords;
@@ -56,8 +56,6 @@ namespace gfx::OpenGL {
             return leftId == b.leftId && rightId == b.rightId;
         }
     };
-    
-    
 
     class FontCache {
     public:
